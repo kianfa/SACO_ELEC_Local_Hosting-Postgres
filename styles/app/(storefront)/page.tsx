@@ -7,7 +7,6 @@ import { CategorySection } from "@/components/category-section"
 import { FeaturedProducts } from "@/components/featured-products"
 import { PromoBanner } from "@/components/promo-banner"
 import { BrandStrip } from "@/components/brand-strip"
-import { TrustFeatures } from "@/components/trust-features"
 import { Footer } from "@/components/footer"
 import { getBrands } from "@/lib/services/brands-service"
 import { getHomepageCategoriesForPage, getHomepageCategorySectionSettings } from "@/lib/services/categories-service"
@@ -70,7 +69,6 @@ export default async function HomePage() {
         <FeaturedProducts products={featuredProducts.data} error={featuredProducts.error} />
         <PromoBanner section={promo.data} banners={promoBanners.data} />
         <BrandStrip brands={brands.data} error={brands.error} />
-        <TrustFeatures />
       </main>
       <Footer settings={siteSettings.data} />
     </div>

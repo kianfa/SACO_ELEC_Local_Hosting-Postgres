@@ -5,10 +5,15 @@ import { HeroImageSlider } from "@/components/hero-image-slider"
 import { HeroWarpBackground } from "@/components/ui/hero-warp-background"
 import type { HeroSliderImage, HomepageSection } from "@/types/site-content"
 
-const defaultTrustPoints = ["کیفیت برتر", "برندهای معتبر", "قیمت رقابتی", "پشتیبانی فنی تخصصی"]
+const defaultTrustPoints = ["کیفیت برتر", "برندهای معتبر", "قیمت رقابتی", "پشتیبانی فنی"]
 function getTrustPoints(section?: HomepageSection | null): string[] {
   const points = section?.metadata?.trustPoints
-  return Array.isArray(points) && points.length ? points.map(String).filter(Boolean) : defaultTrustPoints
+  return Array.isArray(points) && points.length
+    ? points
+        .map(String)
+        .map((point) => (point === ["پشتیبانی", "فنی", "تخصصی"].join(" ") ? "پشتیبانی فنی" : point))
+        .filter(Boolean)
+    : defaultTrustPoints
 }
 
 function getHeroImages(section?: HomepageSection | null): HeroSliderImage[] {
@@ -34,16 +39,16 @@ function HeroTrustBadges({ items }: { items: string[] }) {
   const icons = [ShieldCheck, BadgeCheck, Zap, Sparkles]
 
   return (
-    <div className="grid w-full grid-cols-2 gap-2.5 lg:grid-cols-4">
+    <div className="mx-auto grid w-full max-w-[300px] grid-cols-2 gap-2 sm:max-w-[340px] lg:max-w-none lg:grid-cols-4 lg:gap-3 xl:gap-4">
       {items.map((item, index) => {
         const Icon = icons[index % icons.length]
         return (
           <span
             key={`${item}-${index}`}
-            className="flex h-12 min-w-0 items-center justify-center gap-2 rounded-2xl border border-white/12 bg-[#061a3a]/55 px-3 text-center text-xs font-semibold leading-5 text-blue-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_12px_26px_rgba(2,8,23,0.26)] backdrop-blur-md transition hover:border-cyan-100/28 hover:bg-[#0b2a5a]/62 sm:text-sm lg:h-11 lg:px-2.5"
+            className="flex h-9 min-w-0 items-center justify-center gap-1 rounded-2xl border border-white/12 bg-[#061a3a]/55 px-2 text-center text-xs font-semibold leading-5 text-blue-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_12px_26px_rgba(2,8,23,0.26)] backdrop-blur-md transition hover:border-cyan-100/28 hover:bg-[#0b2a5a]/62 sm:h-11 sm:gap-2 sm:px-3 sm:text-sm lg:h-14 lg:px-4 xl:h-12 xl:px-5"
           >
-            <Icon className="h-4 w-4 shrink-0 text-accent drop-shadow-[0_0_12px_rgba(245,130,32,0.45)]" />
-            <span className="truncate">{item}</span>
+            <Icon className="h-3.5 w-3.5 shrink-0 text-accent drop-shadow-[0_0_12px_rgba(245,130,32,0.45)] sm:h-4 sm:w-4" />
+            <span className="min-w-0 leading-5">{item}</span>
           </span>
         )
       })}
@@ -68,9 +73,9 @@ function HeroCTAButtons({
         <Button
           asChild
           size="lg"
-          className="h-14 rounded-2xl bg-accent px-7 text-base font-bold text-accent-foreground shadow-[0_18px_42px_rgba(245,130,32,0.36),inset_0_1px_0_rgba(255,255,255,0.26)] transition duration-300 hover:-translate-y-0.5 hover:bg-accent/90 hover:shadow-[0_24px_58px_rgba(245,130,32,0.46),inset_0_1px_0_rgba(255,255,255,0.34)] lg:h-16 lg:px-9 lg:text-lg"
+          className="h-[58px] min-h-[58px] rounded-2xl bg-accent px-9 py-4 text-base font-bold text-accent-foreground shadow-[0_18px_42px_rgba(245,130,32,0.36),inset_0_1px_0_rgba(255,255,255,0.26)] transition duration-300 hover:-translate-y-0.5 hover:bg-accent/90 hover:shadow-[0_24px_58px_rgba(245,130,32,0.46),inset_0_1px_0_rgba(255,255,255,0.34)] lg:h-16 lg:px-9 lg:text-lg"
         >
-          <Link href={primaryUrl} aria-label={primaryText} className="flex h-full w-full items-center justify-center gap-2">
+          <Link href={primaryUrl} aria-label={primaryText} className="flex min-h-[58px] w-full items-center justify-center gap-2 lg:min-h-0 lg:h-full">
             {primaryText}
             <ArrowLeft className="h-5 w-5" />
           </Link>
@@ -79,9 +84,9 @@ function HeroCTAButtons({
           asChild
           size="lg"
           variant="outline"
-          className="h-14 rounded-2xl border-cyan-100/28 bg-[#061a3a]/35 px-7 text-base font-semibold text-blue-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.09),0_10px_30px_rgba(2,8,23,0.22)] backdrop-blur-md transition duration-300 hover:-translate-y-0.5 hover:border-cyan-100/46 hover:bg-[#0b2a5a]/54 hover:text-white lg:h-16 lg:px-9 lg:text-lg"
+          className="h-[58px] min-h-[58px] rounded-2xl border-cyan-100/28 bg-[#061a3a]/35 px-9 py-4 text-base font-semibold text-blue-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.09),0_10px_30px_rgba(2,8,23,0.22)] backdrop-blur-md transition duration-300 hover:-translate-y-0.5 hover:border-cyan-100/46 hover:bg-[#0b2a5a]/54 hover:text-white lg:h-16 lg:px-9 lg:text-lg"
         >
-          <Link href={secondaryUrl} aria-label={secondaryText} className="flex h-full w-full items-center justify-center">
+          <Link href={secondaryUrl} aria-label={secondaryText} className="flex min-h-[58px] w-full items-center justify-center lg:min-h-0 lg:h-full">
             {secondaryText}
           </Link>
         </Button>
@@ -134,11 +139,11 @@ export function HeroSection({ section }: { section?: HomepageSection | null }) {
               <p className="mt-4 w-full max-w-[640px] text-lg font-semibold leading-8 text-cyan-50 md:text-xl lg:text-2xl">{subtitle}</p>
               {description ? <p className="mt-3 w-full max-w-[560px] text-sm leading-8 text-blue-50/78 md:text-base lg:max-w-[580px] lg:leading-9">{description}</p> : null}
 
-              <div className="mt-6 w-full max-w-[640px]">
+              <div className="mt-6 w-full max-w-[640px] lg:max-w-[720px]">
                 <HeroTrustBadges items={trustPoints} />
               </div>
 
-              <div className="mt-7 w-full max-w-[520px] lg:mt-8 lg:max-w-[640px]">
+              <div className="mt-7 w-full max-w-[520px] lg:mt-8 lg:max-w-[720px]">
                 <HeroCTAButtons primaryText={primaryText} primaryUrl={primaryUrl} secondaryText={secondaryText} secondaryUrl={secondaryUrl} />
               </div>
             </div>

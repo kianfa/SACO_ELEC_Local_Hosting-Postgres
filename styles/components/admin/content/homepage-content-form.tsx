@@ -22,7 +22,7 @@ function findSection(sections: HomepageSection[], key: string) {
 
 function trustPointsText(section?: HomepageSection) {
   const points = section?.metadata?.trustPoints
-  return Array.isArray(points) ? points.join("\n") : "کیفیت برتر\nبرندهای معتبر\nقیمت رقابتی\nپشتیبانی فنی تخصصی"
+  return Array.isArray(points) ? points.join("\n") : "کیفیت برتر\nبرندهای معتبر\nقیمت رقابتی\nپشتیبانی فنی"
 }
 
 function getHeroSlides(section?: HomepageSection): HeroSliderImage[] {
