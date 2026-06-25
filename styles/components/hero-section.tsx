@@ -35,16 +35,16 @@ function HeroTrustBadges({ items }: { items: string[] }) {
   const icons = [ShieldCheck, BadgeCheck, Zap, Sparkles]
 
   return (
-    <div className="flex flex-wrap gap-2.5">
+    <div className="grid w-full grid-cols-2 gap-2.5 lg:grid-cols-4">
       {items.map((item, index) => {
         const Icon = icons[index % icons.length]
         return (
           <span
             key={`${item}-${index}`}
-            className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/[0.08] px-3.5 py-2 text-xs font-medium text-white/85 shadow-sm backdrop-blur-md transition hover:border-accent/40 hover:bg-white/[0.12] md:text-sm"
+            className="flex h-12 min-w-0 items-center justify-center gap-2 rounded-2xl border border-white/12 bg-[#061a3a]/55 px-3 text-center text-xs font-semibold leading-5 text-blue-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_12px_26px_rgba(2,8,23,0.26)] backdrop-blur-md transition hover:border-cyan-100/28 hover:bg-[#0b2a5a]/62 sm:text-sm lg:h-11 lg:px-2.5"
           >
-            <Icon className="h-4 w-4 text-accent" />
-            {item}
+            <Icon className="h-4 w-4 shrink-0 text-accent drop-shadow-[0_0_12px_rgba(245,130,32,0.45)]" />
+            <span className="truncate">{item}</span>
           </span>
         )
       })}
@@ -64,28 +64,30 @@ function HeroCTAButtons({
   secondaryUrl: string
 }) {
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+    <div className="w-full">
+      <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:gap-4">
         <Button
           asChild
           size="lg"
-          className="h-12 rounded-2xl bg-accent px-6 text-base font-bold text-accent-foreground shadow-[0_18px_45px_rgba(245,130,32,0.28)] transition hover:-translate-y-0.5 hover:bg-accent/90 hover:shadow-[0_22px_55px_rgba(245,130,32,0.35)]"
+          className="h-14 rounded-2xl bg-accent px-7 text-base font-bold text-accent-foreground shadow-[0_18px_42px_rgba(245,130,32,0.36),inset_0_1px_0_rgba(255,255,255,0.26)] transition duration-300 hover:-translate-y-0.5 hover:bg-accent/90 hover:shadow-[0_24px_58px_rgba(245,130,32,0.46),inset_0_1px_0_rgba(255,255,255,0.34)] lg:h-16 lg:px-9 lg:text-lg"
         >
-          <Link href={primaryUrl} aria-label={primaryText}>
+          <Link href={primaryUrl} aria-label={primaryText} className="flex h-full w-full items-center justify-center gap-2">
             {primaryText}
-            <ArrowLeft className="mr-2 h-5 w-5" />
+            <ArrowLeft className="h-5 w-5" />
           </Link>
         </Button>
         <Button
           asChild
           size="lg"
           variant="outline"
-          className="h-12 rounded-2xl border-white/25 bg-white/[0.06] px-6 text-base font-semibold text-white shadow-sm backdrop-blur-md transition hover:-translate-y-0.5 hover:border-white/45 hover:bg-white/12 hover:text-white"
+          className="h-14 rounded-2xl border-cyan-100/28 bg-[#061a3a]/35 px-7 text-base font-semibold text-blue-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.09),0_10px_30px_rgba(2,8,23,0.22)] backdrop-blur-md transition duration-300 hover:-translate-y-0.5 hover:border-cyan-100/46 hover:bg-[#0b2a5a]/54 hover:text-white lg:h-16 lg:px-9 lg:text-lg"
         >
-          <Link href={secondaryUrl} aria-label={secondaryText}>{secondaryText}</Link>
+          <Link href={secondaryUrl} aria-label={secondaryText} className="flex h-full w-full items-center justify-center">
+            {secondaryText}
+          </Link>
         </Button>
       </div>
-      <p className="flex items-center gap-2 text-sm text-white/65">
+      <p className="mt-3 flex items-center justify-center gap-2 text-center text-sm text-blue-50/72 lg:mt-6 lg:text-base">
         <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_18px_rgba(245,130,32,0.85)]" />
         مناسب خرید پروژه‌ای و تأمین تجهیزات صنعتی
       </p>
@@ -114,22 +116,22 @@ export function HeroSection({ section }: { section?: HomepageSection | null }) {
 
           <div className="relative z-10 grid min-h-[520px] items-center gap-8 px-5 py-7 sm:px-7 md:py-9 lg:min-h-[540px] lg:grid-cols-[0.45fr_0.55fr] lg:gap-8 lg:px-10 xl:px-12">
             <div className="order-1 flex flex-col justify-center lg:order-1">
-              <div className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-accent/35 bg-accent/10 px-3.5 py-2 text-xs font-semibold text-accent shadow-[0_10px_30px_rgba(245,130,32,0.08)] backdrop-blur-md md:text-sm">
+              <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-accent/35 bg-accent/10 px-3.5 py-2 text-xs font-semibold text-accent shadow-[0_10px_30px_rgba(245,130,32,0.08)] backdrop-blur-md md:text-sm">
                 <span className="h-2 w-2 rounded-full bg-accent shadow-[0_0_16px_rgba(245,130,32,0.8)]" />
                 الکتروساکو، تأمین‌کننده تجهیزات برق صنعتی
               </div>
 
-              <h1 className="max-w-2xl text-balance text-3xl font-black leading-[1.35] tracking-tight text-white md:text-4xl lg:text-5xl xl:text-[3.35rem]">
+              <h1 className="max-w-2xl text-balance text-3xl font-black leading-[1.32] tracking-tight text-white md:text-4xl lg:text-5xl xl:text-[3.35rem]">
                 {title}
               </h1>
               <p className="mt-4 max-w-xl text-lg font-semibold leading-8 text-white/90 md:text-xl lg:text-2xl">{subtitle}</p>
-              {description ? <p className="mt-4 max-w-xl text-sm leading-8 text-white/74 md:text-base">{description}</p> : null}
+              {description ? <p className="mt-3 max-w-lg text-sm leading-8 text-white/74 md:text-base">{description}</p> : null}
 
-              <div className="mt-6">
+              <div className="mt-6 w-full max-w-[640px]">
                 <HeroTrustBadges items={trustPoints} />
               </div>
 
-              <div className="mt-7">
+              <div className="mt-7 w-full max-w-[520px] lg:mt-8 lg:max-w-[640px]">
                 <HeroCTAButtons primaryText={primaryText} primaryUrl={primaryUrl} secondaryText={secondaryText} secondaryUrl={secondaryUrl} />
               </div>
             </div>

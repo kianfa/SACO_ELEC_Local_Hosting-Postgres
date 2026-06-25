@@ -6,7 +6,6 @@ import { CartProvider } from '@/lib/cart/cart-store'
 import { SiteSettingsProvider } from '@/components/site-settings-provider'
 import { publicSiteSettingsFallback } from '@/lib/site-settings-defaults'
 
-export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = {
   title: 'الکتروساکو | فروشگاه تخصصی تجهیزات برق صنعتی',

@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: "مشاهده برندهای معتبر تجهیزات برق صنعتی در فروشگاه الکتروساکو؛ Schneider Electric، Siemens، ABB، Delta، Omron، Danfoss و سایر برندها.",
 }
 
-export const dynamic = "force-dynamic"
+export const revalidate = 300
 
 export default async function Page() {
   let brands: Brand[] = []

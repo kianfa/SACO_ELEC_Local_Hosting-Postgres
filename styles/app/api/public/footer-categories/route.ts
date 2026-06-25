@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { getFooterCategoryLinks } from "@/lib/services/categories-service"
 import { createRequestTraceId, traceLog, withRequestTraceTiming } from "@/lib/performance/request-tracing"
 
-export const dynamic = "force-dynamic"
+export const revalidate = 300
 
 export async function GET() {
   const requestId = createRequestTraceId()

@@ -413,7 +413,7 @@ export function HeroImageSlider({
       <div className="pointer-events-none absolute inset-x-[18%] -bottom-7 z-0 h-14 rounded-full bg-black/58 blur-2xl" />
       <div className="pointer-events-none absolute inset-x-[30%] -bottom-2 z-0 h-3 rounded-full bg-cyan-100/16 blur-lg" />
 
-      <div className="relative z-10 mx-auto flex min-h-[338px] w-full items-center justify-center overflow-visible [perspective:1400px] sm:min-h-[420px] md:min-h-[440px] lg:min-h-[460px]">
+      <div className="relative z-10 mx-auto flex min-h-[318px] w-full items-center justify-center overflow-visible [perspective:1050px] sm:min-h-[420px] sm:[perspective:1400px] md:min-h-[440px] lg:min-h-[460px]">
         <div className="relative h-full w-full overflow-visible [transform-style:preserve-3d]">
           {(["left", "center", "right"] as const).map((slot) => {
             const slideIndex = panelIndexes[slot]
@@ -455,7 +455,7 @@ export function HeroImageSlider({
               aria-label="تصویر قبلی"
               onClick={previous}
               disabled={isAnimatingStage}
-              className="absolute right-4 top-1/2 z-40 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-cyan-100/20 bg-[#081225]/58 text-white shadow-lg backdrop-blur transition hover:border-accent/70 hover:bg-[#0b2a5a]/82 focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60 lg:flex"
+              className="absolute right-2 top-1/2 z-40 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-cyan-100/20 bg-[#081225]/70 text-white shadow-lg backdrop-blur transition hover:border-accent/70 hover:bg-[#0b2a5a]/82 focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60 sm:right-4 sm:h-10 sm:w-10"
             >
               <ChevronRight className="h-5 w-5" />
             </button>
@@ -464,7 +464,7 @@ export function HeroImageSlider({
               aria-label="تصویر بعدی"
               onClick={next}
               disabled={isAnimatingStage}
-              className="absolute left-4 top-1/2 z-40 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-cyan-100/20 bg-[#081225]/58 text-white shadow-lg backdrop-blur transition hover:border-accent/70 hover:bg-[#0b2a5a]/82 focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60 lg:flex"
+              className="absolute left-2 top-1/2 z-40 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-cyan-100/20 bg-[#081225]/70 text-white shadow-lg backdrop-blur transition hover:border-accent/70 hover:bg-[#0b2a5a]/82 focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60 sm:left-4 sm:h-10 sm:w-10"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>

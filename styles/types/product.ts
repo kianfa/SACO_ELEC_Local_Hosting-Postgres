@@ -94,7 +94,13 @@ export interface ProductQueryOptions {
   featured?: boolean
   active?: boolean
   limit?: number
+  page?: number
+  pageSize?: number
   search?: string
+  sort?: string
+  minPrice?: number
+  maxPrice?: number
+  availability?: "in-stock" | "out-of-stock" | "available" | "unavailable" | "true" | "false" | boolean | null
 
   /**
    * Legacy single-value filters kept for backward compatibility with older
@@ -108,6 +114,14 @@ export interface ProductQueryOptions {
   categories?: string[]
 }
 
+
+export interface ProductListResult {
+  products: Product[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
 
 export interface ProductSearchSuggestion {
   id: string

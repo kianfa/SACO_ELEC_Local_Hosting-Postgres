@@ -432,20 +432,73 @@
   }
 
   @media (max-width: 639px) {
-    .hero-stage-panel--center {
-      --hero-stage-center-z: 80px;
-      transform: translate3d(-50%, -50%, var(--hero-stage-center-z)) rotateY(0deg) scaleX(1) scaleY(1);
+    .hero-stage-panel {
+      width: min(82vw, 318px);
+      height: min(76vw, 288px);
+      max-width: 318px;
     }
 
-    .hero-stage-panel--left,
-    .hero-stage-panel--right,
-    .hero-stage-panel--leftExit,
-    .hero-stage-panel--rightExit,
-    .hero-stage-panel--incomingLeft,
-    .hero-stage-panel--incomingRight {
+    .hero-stage-panel--center {
+      --hero-stage-center-z: 78px;
+      z-index: 30;
+      opacity: 1;
+      transform: translate3d(-50%, -50%, var(--hero-stage-center-z)) rotateY(0deg) scaleX(1) scaleY(1);
+      filter: saturate(1.04) brightness(1);
+      visibility: visible;
+    }
+
+    .hero-stage-panel--left {
+      z-index: 16;
+      opacity: 0.86;
+      visibility: visible;
       pointer-events: none;
-      transform: translate3d(-50%, -50%, -220px) rotateY(0deg) scaleX(0.72) scaleY(0.96);
-      visibility: hidden;
+      transform: translate3d(calc(-50% - min(36vw, 142px)), -50%, -76px) rotateY(-32deg) scaleX(0.62) scaleY(0.95);
+      filter: saturate(0.9) brightness(0.82);
+    }
+
+    .hero-stage-panel--right {
+      z-index: 16;
+      opacity: 0.86;
+      visibility: visible;
+      pointer-events: none;
+      transform: translate3d(calc(-50% + min(36vw, 142px)), -50%, -76px) rotateY(32deg) scaleX(0.62) scaleY(0.95);
+      filter: saturate(0.9) brightness(0.82);
+    }
+
+    .hero-stage-panel--leftExit {
+      z-index: 4;
+      opacity: 0;
+      visibility: visible;
+      pointer-events: none;
+      transform: translate3d(calc(-50% - min(52vw, 204px)), -50%, -158px) rotateY(-42deg) scaleX(0.54) scaleY(0.90);
+      filter: saturate(0.72) brightness(0.60);
+    }
+
+    .hero-stage-panel--rightExit {
+      z-index: 4;
+      opacity: 0;
+      visibility: visible;
+      pointer-events: none;
+      transform: translate3d(calc(-50% + min(52vw, 204px)), -50%, -158px) rotateY(42deg) scaleX(0.54) scaleY(0.90);
+      filter: saturate(0.72) brightness(0.60);
+    }
+
+    .hero-stage-panel--incomingLeft {
+      z-index: 3;
+      opacity: 0;
+      visibility: visible;
+      pointer-events: none;
+      transform: translate3d(calc(-50% - min(52vw, 204px)), -50%, -176px) rotateY(-44deg) scaleX(0.52) scaleY(0.88);
+      filter: saturate(0.68) brightness(0.58);
+    }
+
+    .hero-stage-panel--incomingRight {
+      z-index: 3;
+      opacity: 0;
+      visibility: visible;
+      pointer-events: none;
+      transform: translate3d(calc(-50% + min(52vw, 204px)), -50%, -176px) rotateY(44deg) scaleX(0.52) scaleY(0.88);
+      filter: saturate(0.68) brightness(0.58);
     }
   }
 

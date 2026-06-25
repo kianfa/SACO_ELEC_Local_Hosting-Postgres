@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: "مشاهده دسته‌بندی تجهیزات برق صنعتی شامل تابلو برق، کابل و سیم، سنسور و ابزار دقیق، الکتروموتور، اینورتر، PLC، کنتاکتور، کلید و فیوز در الکتروساکو.",
 }
 
-export const dynamic = "force-dynamic"
+export const revalidate = 300
 
 export default async function Page() {
   let categories: Category[] = []

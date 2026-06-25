@@ -1,5 +1,5 @@
 import { getReadDbClient } from "@/lib/supabase/get-db-client"
-import type { Product, ProductDetail, ProductDocument, ProductQueryOptions, ProductSearchSuggestion, ProductVariant } from "@/types/product"
+import type { Product, ProductDetail, ProductDocument, ProductListResult, ProductQueryOptions, ProductSearchSuggestion, ProductVariant } from "@/types/product"
 
 type SupabaseRelation<T> = T | T[] | null
 
@@ -69,14 +69,19 @@ type RawProductRow = {
   }>
 }
 
-const PRODUCTS_SELECT = `
+function createProductListSelect(_options: ProductQueryOptions, includeVariants = true): string {
+  const variantRelation = includeVariants ? ",\n  product_variants(id, label, price, sort_order, is_active)" : ""
+
+  // Lightweight list payload: no descriptions, specs, documents, or full image gallery.
+  // Product variants are reduced to the minimum fields needed to preserve option-price behavior.
+  // The products page and header suggestions should not move
+  // rich product-detail data through memory.
+  return `
   id,
   name,
   slug,
   model,
   sku,
-  short_description,
-  description,
   price,
   old_price,
   discount_percent,
@@ -85,37 +90,21 @@ const PRODUCTS_SELECT = `
   has_warranty,
   rating,
   review_count,
-  option_group_title,
   brands(name, slug),
   categories(name, slug),
-  inventory(stock_quantity, quantity),
-  product_images(id, url, image_url, alt_text, is_main, sort_order),
-  product_variants(id, label, price, sku, sort_order, is_active),
-  product_specs(label, name, value, sort_order)
+  inventory(stock_quantity, quantity)${variantRelation}
 `
+}
 
-
-const PRODUCTS_SELECT_FALLBACK = `
+const PRODUCT_SEARCH_SUGGESTIONS_SELECT = `
   id,
   name,
   slug,
   model,
   sku,
   price,
-  old_price,
-  discount_percent,
-  is_featured,
-  is_active,
-  has_warranty,
-  rating,
-  review_count,
-  option_group_title,
   brands(name, slug),
-  categories(name, slug),
-  inventory(stock_quantity, quantity),
-  product_images(id, url, image_url, alt_text, is_main, sort_order),
-  product_variants(id, label, price, sku, sort_order, is_active),
-  product_specs(label, name, value, sort_order)
+  categories(name, slug)
 `
 
 const PRODUCT_DETAIL_SELECT = `
@@ -390,33 +379,142 @@ function normalizeFilterList(values: Array<string | null | undefined>): string[]
     .filter((value, index, array) => array.indexOf(value) === index)
 }
 
-function matchesSearch(product: Product, search: string): boolean {
-  const normalizedSearch = normalizeSearchValue(search)
-  if (!normalizedSearch) return true
-
-  const searchableText = [
-    product.name,
-    product.model,
-    product.sku,
-    product.shortDescription,
-    product.description,
-    product.brandName,
-    product.categoryName,
-    ...(product.specs ?? []),
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase()
-
-  return searchableText.includes(normalizedSearch)
+function normalizePositiveInteger(value: number | null | undefined, fallback: number): number {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback
 }
 
-async function runProductsQuery(selectStatement: string, options: ProductQueryOptions) {
+function normalizePriceFilter(value: number | null | undefined): number | null {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null
+}
+
+function normalizeAvailabilityFilter(value: ProductQueryOptions["availability"]): "in-stock" | "out-of-stock" | null {
+  if (value === true || value === "in-stock" || value === "available" || value === "true") return "in-stock"
+  if (value === false || value === "out-of-stock" || value === "unavailable" || value === "false") return "out-of-stock"
+  return null
+}
+
+function createIlikePattern(value: string): string {
+  return `%${value.replace(/[%,()]/g, " ").trim()}%`
+}
+
+function sortProductsQuery<T extends { order: (column: string, options?: { ascending?: boolean; foreignTable?: string }) => T }>(query: T, sort: string | null | undefined): T {
+  switch (sort) {
+    case "cheapest":
+      return query.order("price", { ascending: true }).order("id", { ascending: false })
+    case "expensive":
+      return query.order("price", { ascending: false }).order("id", { ascending: false })
+    case "discount":
+      return query.order("discount_percent", { ascending: false }).order("id", { ascending: false })
+    case "newest":
+      return query.order("id", { ascending: false })
+    default:
+      return query.order("review_count", { ascending: false }).order("id", { ascending: false })
+  }
+}
+
+async function resolveIdsBySlugs(
+  table: "brands" | "categories",
+  slugs: string[],
+): Promise<string[]> {
+  if (!slugs.length) return []
+
+  const supabase = await getReadDbClient()
+  const { data, error } = await supabase
+    .from(table)
+    .select("id")
+    .in("slug", slugs)
+
+  if (error) {
+    throw new Error(`Failed to resolve ${table} filters: ${error.message}`)
+  }
+
+  return ((data ?? []) as Array<{ id?: string | number | null }>)
+    .map((row) => row.id)
+    .filter((id): id is string | number => id !== null && id !== undefined)
+    .map(String)
+}
+
+async function resolveInventoryProductIds(availability: "in-stock" | "out-of-stock" | null): Promise<string[] | null> {
+  if (!availability) return null
+
   const supabase = await getReadDbClient()
   let query = supabase
+    .from("inventory")
+    .select("product_id")
+
+  query = availability === "in-stock"
+    ? query.gt("stock_quantity", 0)
+    : query.lte("stock_quantity", 0)
+
+  const { data, error } = await query
+
+  if (error) {
+    throw new Error(`Failed to resolve inventory filters: ${error.message}`)
+  }
+
+  return ((data ?? []) as Array<{ product_id?: string | number | null }>)
+    .map((row) => row.product_id)
+    .filter((id): id is string | number => id !== null && id !== undefined)
+    .map(String)
+}
+
+async function attachMainImagesToRows(rows: RawProductRow[]): Promise<RawProductRow[]> {
+  const productIds = rows
+    .map((row) => row.id)
+    .filter((id): id is string | number => id !== null && id !== undefined)
+    .map(String)
+
+  if (!productIds.length) return rows
+
+  const supabase = await getReadDbClient()
+  const { data, error } = await supabase
+    .from("product_images")
+    .select("product_id, id, url, image_url, alt_text, is_main, sort_order")
+    .in("product_id", productIds)
+    .eq("is_main", true)
+    .order("sort_order", { ascending: true })
+
+  if (error) {
+    if (isMissingColumnError(error.message)) return rows
+    throw new Error(`Failed to fetch product main images: ${error.message}`)
+  }
+
+  const groupedImages = new Map<string, NonNullable<RawProductRow["product_images"]>>()
+  for (const image of (data ?? []) as Array<{ product_id?: string | number | null; id?: string | number | null; url?: string | null; image_url?: string | null; alt_text?: string | null; is_main?: boolean | null; sort_order?: number | string | null }>) {
+    if (image.product_id === null || image.product_id === undefined) continue
+    const productId = String(image.product_id)
+    const currentImages = toArray(groupedImages.get(productId) ?? null)
+    groupedImages.set(productId, [...currentImages, image])
+  }
+
+  return rows.map((row) => ({
+    ...row,
+    product_images: groupedImages.get(String(row.id)) ?? [],
+  }))
+}
+
+async function runProductListQuery(options: ProductQueryOptions, includeVariants = true) {
+  const supabase = await getReadDbClient()
+  const pageSize = Math.min(normalizePositiveInteger(options.pageSize ?? options.limit, 12), 48)
+  const page = normalizePositiveInteger(options.page, 1)
+  const offset = (page - 1) * pageSize
+  const brandFilters = normalizeFilterList([...(options.brands ?? []), options.brand])
+  const categoryFilters = normalizeFilterList([...(options.categories ?? []), options.category])
+  const searchFilter = normalizeSearchValue(options.search)
+  const minPrice = normalizePriceFilter(options.minPrice)
+  const maxPrice = normalizePriceFilter(options.maxPrice)
+  const availability = normalizeAvailabilityFilter(options.availability)
+  const [brandIds, categoryIds, availabilityProductIds] = await Promise.all([
+    resolveIdsBySlugs("brands", brandFilters),
+    resolveIdsBySlugs("categories", categoryFilters),
+    resolveInventoryProductIds(availability),
+  ])
+
+  let query = supabase
     .from("products")
-    .select(selectStatement)
-    .order("id", { ascending: false })
+    .select(createProductListSelect(options, includeVariants), { count: "exact" })
 
   if (options.active !== undefined) {
     query = query.eq("is_active", options.active)
@@ -426,51 +524,71 @@ async function runProductsQuery(selectStatement: string, options: ProductQueryOp
     query = query.eq("is_featured", options.featured)
   }
 
-  return query
+  if (brandFilters.length > 0) {
+    query = query.in("brand_id", brandIds)
+  }
+
+  if (categoryFilters.length > 0) {
+    query = query.in("category_id", categoryIds)
+  }
+
+  if (availabilityProductIds) {
+    query = query.in("id", availabilityProductIds)
+  }
+
+  if (searchFilter) {
+    const pattern = createIlikePattern(searchFilter)
+    query = query.or(`name.ilike.${pattern},model.ilike.${pattern},sku.ilike.${pattern}`)
+  }
+
+  if (minPrice !== null && minPrice > 0) {
+    query = query.gte("price", minPrice)
+  }
+
+  if (maxPrice !== null && maxPrice > 0) {
+    query = query.lte("price", maxPrice)
+  }
+
+  query = sortProductsQuery(query, options.sort)
+  return query.range(offset, offset + pageSize - 1)
 }
 
-export async function fetchProducts(options: ProductQueryOptions = {}): Promise<Product[]> {
-  // Keep provider-specific query code inside the repository. Brand/category/search are
-  // normalized after fetching so the UI receives clean Product objects and this layer can
-  // later be replaced with a custom API or another database provider.
-  let { data, error } = await runProductsQuery(PRODUCTS_SELECT, options)
+export async function fetchProductList(options: ProductQueryOptions = {}): Promise<ProductListResult> {
+  const pageSize = Math.min(normalizePositiveInteger(options.pageSize ?? options.limit, 12), 48)
+  const page = normalizePositiveInteger(options.page, 1)
+  let { data, error, count } = await runProductListQuery(options, true)
 
   if (error && isMissingColumnError(error.message)) {
-    const fallbackResult = await runProductsQuery(PRODUCTS_SELECT_FALLBACK, options)
+    const fallbackResult = await runProductListQuery(options, false)
     data = fallbackResult.data
     error = fallbackResult.error
+    count = fallbackResult.count
   }
 
   if (error) {
-    throw new Error(`Failed to fetch products: ${error.message}`)
+    throw new Error(`Failed to fetch product list: ${error.message}`)
   }
 
-  let products = ((data ?? []) as unknown as RawProductRow[]).map(mapProduct)
+  const rowsWithMainImages = await attachMainImagesToRows((data ?? []) as unknown as RawProductRow[])
+  const products = rowsWithMainImages.map(mapProduct)
+  const total = count ?? products.length
 
   if (process.env.DEBUG_PERFORMANCE === "true") {
-    console.log(`[perf] mapped public product images count=${products.length}`)
+    console.log(`[perf] public product list mapped count=${products.length} total=${total}`)
   }
 
-  const brandFilters = normalizeFilterList([...(options.brands ?? []), options.brand])
-  if (brandFilters.length > 0) {
-    products = products.filter((product) => brandFilters.includes(normalizeSearchValue(product.brandSlug)))
+  return {
+    products,
+    total,
+    page,
+    pageSize,
+    totalPages: Math.max(1, Math.ceil(total / pageSize)),
   }
+}
 
-  const categoryFilters = normalizeFilterList([...(options.categories ?? []), options.category])
-  if (categoryFilters.length > 0) {
-    products = products.filter((product) => categoryFilters.includes(normalizeSearchValue(product.categorySlug)))
-  }
-
-  const searchFilter = normalizeSearchValue(options.search)
-  if (searchFilter) {
-    products = products.filter((product) => matchesSearch(product, searchFilter))
-  }
-
-  if (options.limit) {
-    products = products.slice(0, options.limit)
-  }
-
-  return products
+export async function fetchProducts(options: ProductQueryOptions = {}): Promise<Product[]> {
+  const result = await fetchProductList({ ...options, page: 1, pageSize: options.limit ?? options.pageSize ?? 24 })
+  return result.products
 }
 
 function isMissingColumnError(message: string): boolean {
@@ -519,25 +637,36 @@ export async function fetchProductSearchSuggestions(
     return []
   }
 
-  // Keep suggestion fetching behind the repository boundary so the UI and API route
-  // remain independent of Supabase. This can later be replaced by a custom search
-  // API, PostgreSQL full-text search, or another provider without changing the header.
-  const products = await fetchProducts({
-    active: true,
-    search: normalizedQuery,
-    limit,
-  })
+  const supabase = await getReadDbClient()
+  const pattern = createIlikePattern(normalizeSearchValue(normalizedQuery))
+  const { data, error } = await supabase
+    .from("products")
+    .select(PRODUCT_SEARCH_SUGGESTIONS_SELECT)
+    .eq("is_active", true)
+    .eq("product_images.is_main", true)
+    .or(`name.ilike.${pattern},model.ilike.${pattern},sku.ilike.${pattern}`)
+    .order("review_count", { ascending: false })
+    .limit(Math.min(Math.max(limit, 1), 10))
 
-  return products.slice(0, limit).map((product) => ({
-    id: product.id,
-    name: product.name,
-    slug: product.slug,
-    model: product.model,
-    sku: product.sku,
-    price: product.price,
-    brandName: product.brandName,
-    categoryName: product.categoryName,
-    mainImageUrl: product.mainImageUrl,
-    mainImageAlt: product.mainImageAlt,
-  }))
+  if (error) {
+    throw new Error(`Failed to fetch product suggestions: ${error.message}`)
+  }
+
+  const rowsWithMainImages = await attachMainImagesToRows((data ?? []) as unknown as RawProductRow[])
+
+  return rowsWithMainImages.map((row) => {
+    const product = mapProduct(row)
+    return {
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      model: product.model,
+      sku: product.sku,
+      price: product.price,
+      brandName: product.brandName,
+      categoryName: product.categoryName,
+      mainImageUrl: product.mainImageUrl,
+      mainImageAlt: product.mainImageAlt,
+    }
+  })
 }

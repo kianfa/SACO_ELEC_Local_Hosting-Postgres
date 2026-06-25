@@ -173,6 +173,7 @@ export function ProductForm({
   const [manualSlugTouched, setManualSlugTouched] = useState(Boolean(product?.slug))
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const documentInputRef = useRef<HTMLInputElement | null>(null)
+  const pendingImagePreviewUrlsRef = useRef<Set<string>>(new Set())
 
   const selectedBrand = brands.find((brand) => brand.id === brandId)?.slug ?? ""
   const originalPriceNumber = parseNumberInput(originalPrice)
@@ -199,6 +200,25 @@ export function ProductForm({
       toast.error(state.message)
     }
   }, [router, state])
+
+  useEffect(() => {
+    const previewUrls = pendingImagePreviewUrlsRef.current
+    return () => {
+      previewUrls.forEach((previewUrl) => URL.revokeObjectURL(previewUrl))
+      previewUrls.clear()
+    }
+  }, [])
+
+  function createPendingImagePreviewUrl(file: File): string {
+    const previewUrl = URL.createObjectURL(file)
+    pendingImagePreviewUrlsRef.current.add(previewUrl)
+    return previewUrl
+  }
+
+  function revokePendingImagePreviewUrl(previewUrl: string) {
+    URL.revokeObjectURL(previewUrl)
+    pendingImagePreviewUrlsRef.current.delete(previewUrl)
+  }
 
   function addSpec() {
     setSpecs((items) => [...items, { specName: "", specValue: "", sortOrder: items.length + 1 }])
@@ -290,7 +310,7 @@ export function ProductForm({
     const additions = selectedFiles.map((file, index) => ({
       id: createPendingImageId(),
       file,
-      previewUrl: URL.createObjectURL(file),
+      previewUrl: createPendingImagePreviewUrl(file),
       altText: defaultAlt,
       isMain: !hasMain && index === 0,
       sortOrder: currentMaxSortOrder + index + 1,
@@ -302,7 +322,7 @@ export function ProductForm({
 
   function removePendingImage(id: string) {
     const imageToRemove = pendingImages.find((image) => image.id === id)
-    if (imageToRemove) URL.revokeObjectURL(imageToRemove.previewUrl)
+    if (imageToRemove) revokePendingImagePreviewUrl(imageToRemove.previewUrl)
 
     const remainingPending = pendingImages.filter((image) => image.id !== id)
     if (!imageToRemove?.isMain) {
@@ -318,7 +338,7 @@ export function ProductForm({
   }
 
   function clearNewImages() {
-    pendingImages.forEach((image) => URL.revokeObjectURL(image.previewUrl))
+    pendingImages.forEach((image) => revokePendingImagePreviewUrl(image.previewUrl))
     const pendingHadMain = pendingImages.some((image) => image.isMain)
     const nextExistingMain = pendingHadMain ? existingImages[0]?.id ?? null : mainExistingImageId
     setMainExistingImageId(nextExistingMain)

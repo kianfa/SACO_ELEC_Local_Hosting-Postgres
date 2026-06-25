@@ -7,8 +7,7 @@ import { getFooterCategoryLinks } from "@/lib/services/categories-service"
 import { publicSiteSettingsFallback } from "@/lib/site-settings-defaults"
 import { withServerTiming } from "@/lib/performance/server-timing"
 
-export const dynamic = "force-dynamic"
-export const revalidate = 0
+export const revalidate = 300
 
 export default async function StorefrontLayout({ children }: { children: ReactNode }) {
   const [settingsResult, categoriesResult] = await Promise.allSettled([

@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState, useEffect, useMemo, useState } from "react"
+import { useActionState, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Loader2, Save } from "lucide-react"
@@ -61,5 +61,17 @@ export function CategoryForm({ category = null, categories }: { category?: Categ
 }
 
 function ImageField({ label, inputName, altName, clearName, currentUrl, currentAlt, defaultAlt, onPreview }: { label: string; inputName: string; altName: string; clearName: string; currentUrl?: string | null; currentAlt?: string | null; defaultAlt: string; onPreview: (value: string) => void }) {
-  return <div className="space-y-3 rounded-xl border p-3"><Label>{label}</Label><Input name={inputName} type="file" accept="image/jpeg,image/png,image/webp" className="rounded-xl" onChange={(e) => { const selected = e.target.files?.[0]; if (selected) onPreview(URL.createObjectURL(selected)) }} /><div className="space-y-2"><Label className="text-xs">متن ALT</Label><Input name={altName} maxLength={150} defaultValue={currentAlt ?? defaultAlt} className="rounded-xl" /></div>{currentUrl ? <label className="flex items-center gap-2 text-xs text-muted-foreground"><input type="checkbox" name={clearName} /> حذف تصویر فعلی</label> : null}</div>
+  const previewObjectUrlRef = useRef<string | null>(null)
+
+  useEffect(() => () => { if (previewObjectUrlRef.current) URL.revokeObjectURL(previewObjectUrlRef.current) }, [])
+
+  function handlePreview(file: File | undefined) {
+    if (!file) return
+    if (previewObjectUrlRef.current) URL.revokeObjectURL(previewObjectUrlRef.current)
+    const nextPreviewUrl = URL.createObjectURL(file)
+    previewObjectUrlRef.current = nextPreviewUrl
+    onPreview(nextPreviewUrl)
+  }
+
+  return <div className="space-y-3 rounded-xl border p-3"><Label>{label}</Label><Input name={inputName} type="file" accept="image/jpeg,image/png,image/webp" className="rounded-xl" onChange={(e) => handlePreview(e.target.files?.[0])} /><div className="space-y-2"><Label className="text-xs">متن ALT</Label><Input name={altName} maxLength={150} defaultValue={currentAlt ?? defaultAlt} className="rounded-xl" /></div>{currentUrl ? <label className="flex items-center gap-2 text-xs text-muted-foreground"><input type="checkbox" name={clearName} /> حذف تصویر فعلی</label> : null}</div>
 }

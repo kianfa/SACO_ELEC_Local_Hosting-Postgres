@@ -1,7 +1,7 @@
 import { ProductsErrorState, ProductsPageClient } from "@/components/products/products-page-client"
 import { getBrands } from "@/lib/services/brands-service"
 import { getCategories } from "@/lib/services/categories-service"
-import { getProducts } from "@/lib/services/products-service"
+import { getProductList } from "@/lib/services/products-service"
 
 type SearchParamsValue = string | string[] | undefined
 type ProductsPageSearchParams = Record<string, SearchParamsValue>
@@ -17,6 +17,12 @@ function safeDecode(value: string): string {
   } catch {
     return value
   }
+}
+
+function parseAvailabilityParam(value: string | undefined) {
+  if (value === "in-stock" || value === "available" || value === "true") return value
+  if (value === "out-of-stock" || value === "unavailable" || value === "false") return value
+  return undefined
 }
 
 function parseMultiParam(params: ProductsPageSearchParams, key: string, legacyKey?: string): string[] {
@@ -44,13 +50,22 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     const sort = readSearchParam(params.sort)?.trim() || undefined
     const minPrice = readSearchParam(params.minPrice)?.trim() || undefined
     const maxPrice = readSearchParam(params.maxPrice)?.trim() || undefined
+    const page = Math.max(1, Number(readSearchParam(params.page)) || 1)
+    const minPriceNumber = minPrice ? Number(minPrice) : undefined
+    const maxPriceNumber = maxPrice ? Number(maxPrice) : undefined
 
-    const [products, categoryOptions, brandOptions] = await Promise.all([
-      getProducts({
+    const [productList, categoryOptions, brandOptions] = await Promise.all([
+      getProductList({
         active: true,
         search,
         categories,
         brands,
+        availability: parseAvailabilityParam(availability),
+        sort,
+        minPrice: Number.isFinite(minPriceNumber) ? minPriceNumber : undefined,
+        maxPrice: Number.isFinite(maxPriceNumber) ? maxPriceNumber : undefined,
+        page,
+        pageSize: 12,
       }),
       getCategories().catch(() => []),
       getBrands().catch(() => []),
@@ -58,7 +73,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
     return (
       <ProductsPageClient
-        products={products}
+        products={productList.products}
         categories={categoryOptions}
         brands={brandOptions}
         initialSearchQuery={search ?? ""}
@@ -68,6 +83,9 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         activeSort={sort ?? "bestselling"}
         activeMinPrice={minPrice ?? ""}
         activeMaxPrice={maxPrice ?? ""}
+        totalProducts={productList.total}
+        currentPage={productList.page}
+        totalPages={productList.totalPages}
       />
     )
   } catch (error) {

@@ -71,7 +71,10 @@ function isValidExternalUrl(value?: string | null) {
 }
 
 const footerCardClass =
-  "rounded-[1.75rem] border border-white/10 bg-[#0a2139]/82 p-5 shadow-2xl shadow-black/15 backdrop-blur-md ring-1 ring-white/[0.03]"
+  "rounded-[1.75rem] border border-white/10 bg-[#0a2139]/82 p-5 shadow-2xl shadow-black/15 backdrop-blur-md ring-1 ring-white/[0.03] transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-[#0d2a48]/86 hover:shadow-accent/10"
+
+const footerInnerCardClass =
+  "rounded-3xl border border-white/10 bg-white/[0.045] p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/35 hover:bg-white/[0.075]"
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
@@ -176,19 +179,55 @@ export function Footer({ settings }: { settings?: PublicSiteSettings } = {}) {
               ))}
             </div>
 
-            <div className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Button asChild className="h-13 rounded-2xl bg-accent text-base font-black text-accent-foreground shadow-lg shadow-accent/20 hover:bg-accent/90">
-                <a href={isValidExternalUrl(telegramUrl) ? telegramUrl : `/contact`} target={isValidExternalUrl(telegramUrl) ? "_blank" : undefined} rel={isValidExternalUrl(telegramUrl) ? "noreferrer" : undefined}>
-                  <Headphones className="ml-2 h-5 w-5" />
-                  درخواست مشاوره فنی
-                </a>
-              </Button>
-              <Button asChild variant="outline" className="h-13 rounded-2xl border-accent/55 bg-transparent text-base font-black text-white hover:bg-accent hover:text-accent-foreground">
-                <Link href="/contact">
-                  <Phone className="ml-2 h-5 w-5" />
-                  استعلام قیمت
-                </Link>
-              </Button>
+            <div className={`${footerInnerCardClass} mt-5`}>
+              {footer.trustBadgeImageUrl && (
+                <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+                  <SafeImageWithFallback
+                    src={footer.trustBadgeImageUrl}
+                    altText={footer.trustBadgeImageAltText || "نشان اعتبار الکتروساکو"}
+                    fallbackText={footer.trustBadgeImageAltText || "نشان اعتبار الکتروساکو"}
+                    objectFit="contain"
+                    className="h-20 w-20 rounded-2xl border border-white/12 bg-white p-2"
+                  />
+                  <div className="min-w-0 flex-1 text-sm leading-7 text-white/68">
+                    <strong className="block text-white">{footer.trustBadgeImageAltText || "نشان اعتبار الکتروساکو"}</strong>
+                    <span>اطلاعات اعتبارسنجی بارگذاری‌شده از تنظیمات سایت.</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-start gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-accent/35 bg-accent/10 text-accent">
+                  <Award className="h-5 w-5" />
+                </span>
+                <div>
+                  <h3 className="font-black text-white">خدمات سریع مشتریان</h3>
+                  <p className="mt-1 text-xs leading-6 text-white/62">
+                    برای مشاوره، اعلام قیمت و پیگیری سفارش با تیم پشتیبانی در ارتباط باشید.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <Button asChild className="h-11 rounded-2xl bg-accent text-sm font-black text-accent-foreground shadow-lg shadow-accent/15 hover:bg-accent/90">
+                  <a href={isValidExternalUrl(telegramUrl) ? telegramUrl : `/contact`} target={isValidExternalUrl(telegramUrl) ? "_blank" : undefined} rel={isValidExternalUrl(telegramUrl) ? "noreferrer" : undefined}>
+                    <Headphones className="ml-2 h-4 w-4" />
+                    مشاوره
+                  </a>
+                </Button>
+                <Button asChild variant="outline" className="h-11 rounded-2xl border-accent/45 bg-transparent text-sm font-black text-white hover:bg-accent hover:text-accent-foreground">
+                  <Link href="/contact">
+                    <Phone className="ml-2 h-4 w-4" />
+                    استعلام
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="h-11 rounded-2xl border-white/15 bg-white/[0.05] text-sm font-black text-white hover:bg-white hover:text-primary">
+                  <Link href="/contact">
+                    <MessageCircle className="ml-2 h-4 w-4" />
+                    پشتیبانی
+                  </Link>
+                </Button>
+              </div>
             </div>
           </section>
 
@@ -265,7 +304,7 @@ export function Footer({ settings }: { settings?: PublicSiteSettings } = {}) {
               )}
             </div>
 
-            <div className="mt-5 rounded-3xl border border-accent/25 bg-accent/10 p-4">
+            <div className={`${footerInnerCardClass} mt-5 border-accent/25 bg-accent/10`}>
               <div className="mb-3 flex items-center gap-2">
                 <Award className="h-5 w-5 text-accent" />
                 <h4 className="font-black text-white">استعلام قیمت و موجودی</h4>
@@ -294,45 +333,7 @@ export function Footer({ settings }: { settings?: PublicSiteSettings } = {}) {
           </section>
         </div>
 
-        <section className="mt-5 rounded-[1.75rem] border border-white/10 bg-[#0a2139]/74 p-5 shadow-2xl shadow-black/10 backdrop-blur-md">
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-[auto_1fr_auto] lg:items-center">
-            <div className="flex items-center gap-3">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-accent/35 bg-accent/10 text-accent">
-                <ShieldCheck className="h-6 w-6" />
-              </span>
-              <div>
-                <h3 className="font-black text-white">نمادها و اعتبار فروشگاه</h3>
-                <p className="mt-1 text-xs leading-6 text-white/58">محل نمایش نماد اعتماد، ساماندهی و سایر نشان‌های تأییدشده از پنل مدیریت</p>
-              </div>
-            </div>
-
-            {footer.trustBadgeImageUrl ? (
-              <div className="flex flex-wrap items-center gap-3">
-                <SafeImageWithFallback
-                  src={footer.trustBadgeImageUrl}
-                  altText={footer.trustBadgeImageAltText || "نشان اعتماد الکتروساکو"}
-                  fallbackText={footer.trustBadgeImageAltText || "نشان اعتماد الکتروساکو"}
-                  objectFit="contain"
-                  className="h-24 w-24 rounded-2xl border border-white/12 bg-white p-2"
-                />
-                <div className="text-sm leading-7 text-white/68">
-                  <strong className="block text-white">{footer.trustBadgeImageAltText || "نشان اعتماد الکتروساکو"}</strong>
-                  <span>تصویر اعتبارسنجی بارگذاری‌شده از تنظیمات سایت.</span>
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.035] p-4 text-sm leading-7 text-white/58">
-                هنوز تصویری برای نماد اعتماد در تنظیمات سایت بارگذاری نشده است.
-              </div>
-            )}
-
-            <Button asChild variant="outline" className="rounded-2xl border-white/15 bg-white/[0.06] text-white hover:bg-white hover:text-primary">
-              <Link href="/contact">ارتباط با پشتیبانی</Link>
-            </Button>
-          </div>
-        </section>
-
-        <section className="mt-5 rounded-[1.75rem] border border-white/10 bg-[#0a2139]/78 p-5 shadow-2xl shadow-black/10 backdrop-blur-md">
+        <section className={`${footerCardClass} mt-5`}>
           <div className="flex flex-col gap-5 text-sm text-white/62 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-start gap-3 lg:max-w-3xl">
               <MapPin className="mt-1 h-5 w-5 shrink-0 text-accent" />

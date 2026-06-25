@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState, useEffect, useMemo, useState } from "react"
+import { useActionState, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Loader2, Save } from "lucide-react"
@@ -25,10 +25,20 @@ export function BrandForm({ brand = null }: { brand?: Brand | null }) {
   const [slug, setSlug] = useState(brand?.slug ?? "")
   const [slugTouched, setSlugTouched] = useState(Boolean(brand))
   const [logoPreview, setLogoPreview] = useState(brand?.logoUrl ?? "")
+  const logoObjectUrlRef = useRef<string | null>(null)
 
   useEffect(() => { if (!slugTouched) setSlug(slugify(name)) }, [name, slugTouched])
   useEffect(() => { if (!state.message) return; state.ok ? toast.success(state.message) : toast.error(state.message); if (state.ok && state.redirectTo) router.push(state.redirectTo) }, [router, state])
+  useEffect(() => () => { if (logoObjectUrlRef.current) URL.revokeObjectURL(logoObjectUrlRef.current) }, [])
   const defaultAlt = useMemo(() => `لوگوی برند ${name || "برند"}`, [name])
+
+  function handleLogoPreview(file: File | undefined) {
+    if (!file) return
+    if (logoObjectUrlRef.current) URL.revokeObjectURL(logoObjectUrlRef.current)
+    const nextPreviewUrl = URL.createObjectURL(file)
+    logoObjectUrlRef.current = nextPreviewUrl
+    setLogoPreview(nextPreviewUrl)
+  }
 
   return <form action={action} className="grid gap-6 lg:grid-cols-[1fr_300px]">
     <input type="hidden" name="id" value={brand?.id ?? ""} />
@@ -36,7 +46,7 @@ export function BrandForm({ brand = null }: { brand?: Brand | null }) {
     <Card className="rounded-2xl shadow-sm"><CardHeader><CardTitle>اطلاعات برند</CardTitle></CardHeader><CardContent className="grid gap-4 md:grid-cols-2">
       <div className="space-y-2 md:col-span-2"><Label>نام برند</Label><Input name="name" value={name} onChange={(e) => setName(e.target.value)} required className="rounded-xl" /></div>
       <div className="space-y-2"><Label>slug</Label><Input name="slug" value={slug} onChange={(e) => { setSlug(slugify(e.target.value)); setSlugTouched(true) }} required dir="ltr" className="rounded-xl text-left" /><p className="text-xs text-muted-foreground">فقط حروف انگلیسی کوچک، عدد و خط تیره</p></div>
-      <div className="space-y-2"><Label>لوگوی برند</Label><Input name="logo" type="file" accept="image/jpeg,image/png,image/webp" className="rounded-xl" onChange={(e) => { const selected = e.target.files?.[0]; if (selected) setLogoPreview(URL.createObjectURL(selected)) }} /></div>
+      <div className="space-y-2"><Label>لوگوی برند</Label><Input name="logo" type="file" accept="image/jpeg,image/png,image/webp" className="rounded-xl" onChange={(e) => handleLogoPreview(e.target.files?.[0])} /></div>
       <div className="space-y-2 md:col-span-2"><Label>متن ALT لوگو</Label><Input name="logoAltText" defaultValue={brand?.logoAltText ?? defaultAlt} maxLength={150} className="rounded-xl" /><p className="text-xs text-muted-foreground">برای سئو و نمایش جایگزین در صورت بارگذاری‌نشدن لوگو استفاده می‌شود.</p></div>
       <div className="space-y-2 md:col-span-2"><Label>توضیحات</Label><Textarea name="description" defaultValue={brand?.description ?? ""} className="min-h-28 rounded-xl" /></div>
       <label className="flex items-center justify-between rounded-xl border p-3 text-sm font-medium md:col-span-2"><span>فعال / قابل نمایش</span><Switch name="isActive" defaultChecked={brand?.isActive ?? true} /></label>

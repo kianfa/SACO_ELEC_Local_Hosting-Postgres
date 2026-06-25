@@ -258,12 +258,15 @@ class PgQueryBuilder {
   private _orRaws: string[] = []
   private _orders: OrderClause[] = []
   private _limit: number | null = null
+  private _offset: number | null = null
+  private _countRequested = false
   private _isCountHead = false
 
   constructor(table: string) { this._table = table }
 
   select(cols: string, opts?: { count?: string; head?: boolean }): this {
     this._select = cols
+    if (opts?.count) this._countRequested = true
     if (opts?.head) this._isCountHead = true
     return this
   }
@@ -275,6 +278,7 @@ class PgQueryBuilder {
     this._wheres.push({ col, op: "IN", val: vals }); return this
   }
   or(raw: string): this { this._orRaws.push(raw); return this }
+  gt(col: string, val: unknown): this { this._wheres.push({ col, op: ">", val }); return this }
   gte(col: string, val: unknown): this { this._wheres.push({ col, op: ">=", val }); return this }
   lt(col: string, val: unknown): this { this._wheres.push({ col, op: "<", val }); return this }
   lte(col: string, val: unknown): this { this._wheres.push({ col, op: "<=", val }); return this }
@@ -284,6 +288,11 @@ class PgQueryBuilder {
     return this
   }
   limit(n: number): this { this._limit = n; return this }
+  range(from: number, to: number): this {
+    this._offset = Math.max(0, from)
+    this._limit = Math.max(0, to - from + 1)
+    return this
+  }
   abortSignal(_signal: AbortSignal): this { return this }
 
   // -------------------------------------------------------------------------
@@ -294,10 +303,14 @@ class PgQueryBuilder {
     const params: unknown[] = []
     const { primary, relations } = parseSelect(this._select)
 
-    if (this._isCountHead) {
-      const where = buildWhere(this._wheres, this._orRaws, params)
-      const r = await pool.query(`SELECT COUNT(*) FROM public."${this._table}" ${where}`, params)
-      return { data: null, count: Number(r.rows[0]?.count ?? 0), error: null }
+    let count: number | null = null
+
+    if (this._isCountHead || this._countRequested) {
+      const countParams: unknown[] = []
+      const where = buildWhere(this._wheres, this._orRaws, countParams, this._table)
+      const r = await pool.query(`SELECT COUNT(*) FROM public."${this._table}" ${where}`, countParams)
+      count = Number(r.rows[0]?.count ?? 0)
+      if (this._isCountHead) return { data: null, count, error: null }
     }
 
     // --- Build main SELECT ---
@@ -323,6 +336,7 @@ class PgQueryBuilder {
     let mainSql = `SELECT ${mainCols} FROM public."${this._table}" ${where}`
     if (orderSql) mainSql += ` ORDER BY ${orderSql}`
     if (this._limit !== null) { params.push(this._limit); mainSql += ` LIMIT $${params.length}` }
+    if (this._offset !== null) { params.push(this._offset); mainSql += ` OFFSET $${params.length}` }
 
     const mainResult = await pool.query(mainSql, params)
     let rows = mainResult.rows as Record<string, unknown>[]
@@ -338,7 +352,7 @@ class PgQueryBuilder {
       })
     }
 
-    return { data: rows, error: null }
+    return { data: rows, count, error: null }
   }
 
   then(resolve: (v: { data: unknown; count?: number | null; error: null }) => void, reject: (e: unknown) => void) {

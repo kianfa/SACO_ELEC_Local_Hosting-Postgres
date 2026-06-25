@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { ChevronLeft, RefreshCw, SearchX, X } from "lucide-react"
+import { ChevronLeft, SearchX, X } from "lucide-react"
 import { TopBar } from "@/components/top-bar"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -15,6 +15,7 @@ import { ProductListItem } from "@/components/product-list-item"
 import { ProductPagination } from "@/components/product-pagination"
 import { EmptyProductState } from "@/components/empty-product-state"
 import { Button } from "@/components/ui/button"
+import { PublicDataErrorState } from "@/components/public-data-error-state"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -50,10 +51,6 @@ function createEmptyFilters(maxPrice: number): ProductFilterState {
     hasWarranty: null,
     applications: [],
   }
-}
-
-function normalize(value: string | null | undefined) {
-  return (value ?? "").trim().toLowerCase()
 }
 
 function readAvailability(value?: string) {
@@ -102,6 +99,9 @@ interface ProductsPageClientProps {
   activeSort?: string
   activeMinPrice?: string
   activeMaxPrice?: string
+  totalProducts?: number
+  currentPage?: number
+  totalPages?: number
 }
 
 export function ProductsPageClient({
@@ -115,6 +115,9 @@ export function ProductsPageClient({
   activeSort = "bestselling",
   activeMinPrice = "",
   activeMaxPrice = "",
+  totalProducts = products.length,
+  currentPage: activePage = 1,
+  totalPages: serverTotalPages = 1,
 }: ProductsPageClientProps) {
   const router = useRouter()
   const pathname = usePathname()
@@ -122,10 +125,9 @@ export function ProductsPageClient({
   const categoryOptions = useMemo(() => toOptions(categories), [categories])
   const brandOptions = useMemo(() => toOptions(brands), [brands])
   const filterMaxPrice = useMemo(() => {
-    const catalogMaxPrice = products.reduce((max, product) => Math.max(max, product.price || 0), 0)
     const urlMaxPrice = Number(activeMaxPrice)
-    return roundPriceFilterMax(Math.max(catalogMaxPrice, Number.isFinite(urlMaxPrice) ? urlMaxPrice : 0))
-  }, [activeMaxPrice, products])
+    return roundPriceFilterMax(Number.isFinite(urlMaxPrice) ? urlMaxPrice : 0)
+  }, [activeMaxPrice])
   const [filters, setFilters] = useState<ProductFilterState>(() =>
     createFiltersFromUrl({
       categories: activeCategorySlugs,
@@ -139,7 +141,7 @@ export function ProductsPageClient({
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [sortBy, setSortBy] = useState(activeSort || "bestselling")
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery)
-  const [currentPage, setCurrentPage] = useState(1)
+  const [currentPage, setCurrentPage] = useState(activePage)
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
 
   // Keep client-side filter controls in sync when navigation changes between
@@ -157,8 +159,9 @@ export function ProductsPageClient({
     )
     setSearchQuery(initialSearchQuery)
     setSortBy(activeSort || "bestselling")
-    setCurrentPage(1)
+    setCurrentPage(activePage)
   }, [
+    activePage,
     activeCategorySlugs,
     activeBrandSlugs,
     activeAvailability,
@@ -169,10 +172,11 @@ export function ProductsPageClient({
     activeSort,
   ])
 
-  const pushProductsUrl = (nextFilters: ProductFilterState, overrides?: { search?: string | null; sort?: string | null }) => {
+  const pushProductsUrl = useCallback((nextFilters: ProductFilterState, overrides?: { search?: string | null; sort?: string | null; page?: number | null }) => {
     const params = new URLSearchParams(searchParams.toString())
     const nextSearch = overrides?.search ?? searchQuery
     const nextSort = overrides?.sort ?? sortBy
+    const nextPage = overrides?.page ?? 1
 
     if (nextSearch?.trim()) params.set("search", nextSearch.trim())
     else params.delete("search")
@@ -199,85 +203,26 @@ export function ProductsPageClient({
     if (nextSort && nextSort !== "bestselling") params.set("sort", nextSort)
     else params.delete("sort")
 
+    if (nextPage && nextPage > 1) params.set("page", String(nextPage))
+    else params.delete("page")
+
     const query = params.toString()
     router.push(query ? `${pathname}?${query}` : pathname)
-  }
+  }, [filterMaxPrice, pathname, router, searchParams, searchQuery, sortBy])
 
-  const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase()
-        const searchableText = [
-          product.name,
-          product.model,
-          product.sku,
-          product.brandName,
-          product.categoryName,
-          product.shortDescription,
-          product.description,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase()
+  useEffect(() => {
+    if (searchQuery === initialSearchQuery) return
 
-        if (!searchableText.includes(query)) {
-          return false
-        }
-      }
+    const timeout = window.setTimeout(() => {
+      setCurrentPage(1)
+      pushProductsUrl(filters, { search: searchQuery, page: 1 })
+    }, 450)
 
-      if (filters.categories.length > 0) {
-        const productCategoryKey = normalize(product.categorySlug) || normalize(product.categoryName)
-        if (!productCategoryKey || !filters.categories.map(normalize).includes(productCategoryKey)) {
-          return false
-        }
-      }
+    return () => window.clearTimeout(timeout)
+  }, [filters, initialSearchQuery, pushProductsUrl, searchQuery])
 
-      if (filters.brands.length > 0) {
-        const productBrandKey = normalize(product.brandSlug) || normalize(product.brandName)
-        if (!productBrandKey || !filters.brands.map(normalize).includes(productBrandKey)) {
-          return false
-        }
-      }
-
-      if (product.price < filters.priceRange[0] || product.price > filters.priceRange[1]) {
-        return false
-      }
-
-      if (filters.inStock !== null && (product.stockQuantity > 0) !== filters.inStock) {
-        return false
-      }
-
-      if (filters.hasWarranty !== null && product.hasWarranty !== filters.hasWarranty) {
-        return false
-      }
-
-      return true
-    })
-  }, [filters, products, searchQuery])
-
-  const sortedProducts = useMemo(() => {
-    return [...filteredProducts].sort((a, b) => {
-      switch (sortBy) {
-        case "cheapest":
-          return a.price - b.price
-        case "expensive":
-          return b.price - a.price
-        case "discount":
-          return b.discountPercent - a.discountPercent
-        case "newest":
-          return String(b.id).localeCompare(String(a.id))
-        default:
-          return b.reviewCount - a.reviewCount
-      }
-    })
-  }, [filteredProducts, sortBy])
-
-  const itemsPerPage = 12
-  const totalPages = Math.ceil(sortedProducts.length / itemsPerPage)
-  const paginatedProducts = sortedProducts.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  )
+  const paginatedProducts = products
+  const totalPages = serverTotalPages
 
   const handleRemoveFilter = (type: string, value?: string) => {
     let nextFilters = filters
@@ -335,11 +280,15 @@ export function ProductsPageClient({
   const handleSortChange = (nextSort: string) => {
     setSortBy(nextSort)
     setCurrentPage(1)
-    pushProductsUrl(filters, { sort: nextSort })
+    pushProductsUrl(filters, { sort: nextSort, page: 1 })
+  }
+
+  const handlePageChange = (nextPage: number) => {
+    setCurrentPage(nextPage)
+    pushProductsUrl(filters, { page: nextPage })
   }
 
   const hasUrlSearch = Boolean(initialSearchQuery)
-  const totalProducts = filteredProducts.length
 
   return (
     <div className="min-h-screen bg-background">
@@ -471,7 +420,7 @@ export function ProductsPageClient({
                   <ProductPagination
                     currentPage={currentPage}
                     totalPages={totalPages}
-                    onPageChange={setCurrentPage}
+                    onPageChange={handlePageChange}
                   />
                 )}
               </>
@@ -517,27 +466,13 @@ export function ProductsPageClient({
   )
 }
 
-export function ProductsErrorState({ message }: { message: string }) {
+export function ProductsErrorState() {
   return (
     <div className="min-h-screen bg-background">
       <TopBar />
       <Header />
       <main className="container mx-auto px-4 py-16">
-        <div className="mx-auto max-w-2xl rounded-2xl border border-destructive/20 bg-card p-8 text-center shadow-sm">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-            <RefreshCw className="h-7 w-7" />
-          </div>
-          <h1 className="mb-3 text-2xl font-bold text-foreground">خطا در دریافت محصولات</h1>
-          <p className="mb-6 text-sm leading-7 text-muted-foreground">
-            اتصال به پایگاه داده برقرار نشد یا اطلاعات محصولات قابل دریافت نیست.
-          </p>
-          <p dir="ltr" className="mb-6 rounded-xl bg-muted p-3 text-xs text-muted-foreground">
-            {message}
-          </p>
-          <Button asChild className="rounded-xl bg-primary hover:bg-primary/90">
-            <Link href="/products">تلاش مجدد</Link>
-          </Button>
-        </div>
+        <PublicDataErrorState variant="products" fullPage />
       </main>
       <Footer />
     </div>
