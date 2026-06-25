@@ -3,8 +3,9 @@
 import Link from "next/link"
 import { ProductCard } from "./product-card"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, AlertCircle } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 import type { Product } from "@/types/product"
+import { PublicDataErrorState } from "@/components/public-data-error-state"
 
 interface FeaturedProductsProps {
   products: Product[]
@@ -26,10 +27,7 @@ export function FeaturedProducts({ products, error }: FeaturedProductsProps) {
       </div>
 
       {error ? (
-        <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-sm text-destructive flex items-center gap-3">
-          <AlertCircle className="h-5 w-5 flex-shrink-0" />
-          <span>خطا در دریافت محصولات ویژه. لطفاً بعداً دوباره تلاش کنید.</span>
-        </div>
+        <PublicDataErrorState variant="products" className="p-6 sm:p-8" />
       ) : products.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center text-muted-foreground">
           هنوز محصول ویژه‌ای ثبت نشده است.

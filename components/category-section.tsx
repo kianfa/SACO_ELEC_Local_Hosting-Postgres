@@ -1,9 +1,10 @@
 "use client"
 
 import { CategoryCard } from "./category-card"
-import { ChevronLeft, ChevronRight, AlertCircle } from "lucide-react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Category, HomepageCategorySectionSettings } from "@/types/category"
+import { PublicDataErrorState } from "@/components/public-data-error-state"
 
 interface CategorySectionProps {
   categories: Category[]
@@ -62,10 +63,7 @@ export function CategorySection({ categories, settings, error }: CategorySection
         </Button>
 
         {error ? (
-          <div className="flex items-center gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-sm text-destructive">
-            <AlertCircle className="h-5 w-5 flex-shrink-0" />
-            <span>خطا در دریافت دسته‌بندی‌ها. لطفاً بعداً دوباره تلاش کنید.</span>
-          </div>
+          <PublicDataErrorState variant="compact" className="p-6 sm:p-8" />
         ) : visibleCategories.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center text-muted-foreground">
             هنوز دسته‌بندی‌ای برای صفحه اصلی انتخاب نشده است.

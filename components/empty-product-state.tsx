@@ -14,17 +14,17 @@ export function EmptyProductState({ onClearFilters }: EmptyProductStateProps) {
         <SearchX className="w-10 h-10 text-muted-foreground" />
       </div>
       <h3 className="text-xl font-bold text-foreground mb-2">
-        محصولی با این فیلترها پیدا نشد
+        محصولی یافت نشد
       </h3>
       <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-        فیلترها را تغییر دهید یا با پشتیبانی فنی تماس بگیرید.
+        در حال حاضر محصولی مطابق با این بخش وجود ندارد.
       </p>
       <Button
         variant="outline"
         className="rounded-xl"
         onClick={onClearFilters}
       >
-        پاک کردن فیلترها
+        مشاهده همه محصولات
       </Button>
     </div>
   )

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { ChevronLeft, RefreshCw, SearchX, X } from "lucide-react"
+import { ChevronLeft, SearchX, X } from "lucide-react"
 import { TopBar } from "@/components/top-bar"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -15,6 +15,7 @@ import { ProductListItem } from "@/components/product-list-item"
 import { ProductPagination } from "@/components/product-pagination"
 import { EmptyProductState } from "@/components/empty-product-state"
 import { Button } from "@/components/ui/button"
+import { PublicDataErrorState } from "@/components/public-data-error-state"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -34,13 +35,22 @@ import type { Product } from "@/types/product"
 import type { Brand } from "@/types/brand"
 import type { Category } from "@/types/category"
 
-const emptyFilters: ProductFilterState = {
-  categories: [],
-  brands: [],
-  priceRange: [0, 30000000],
-  inStock: null,
-  hasWarranty: null,
-  applications: [],
+const DEFAULT_PRICE_FILTER_MAX = 500000000
+
+function roundPriceFilterMax(price: number): number {
+  if (!Number.isFinite(price) || price <= 0) return DEFAULT_PRICE_FILTER_MAX
+  return Math.max(DEFAULT_PRICE_FILTER_MAX, Math.ceil(price / 100000) * 100000)
+}
+
+function createEmptyFilters(maxPrice: number): ProductFilterState {
+  return {
+    categories: [],
+    brands: [],
+    priceRange: [0, maxPrice],
+    inStock: null,
+    hasWarranty: null,
+    applications: [],
+  }
 }
 
 function normalize(value: string | null | undefined) {
@@ -59,18 +69,19 @@ function createFiltersFromUrl(params: {
   availability?: string
   minPrice?: string
   maxPrice?: string
+  defaultMaxPrice: number
 }): ProductFilterState {
   const minPrice = Number(params.minPrice)
-  const maxPrice = Number(params.maxPrice)
+  const parsedMaxPrice = Number(params.maxPrice)
 
   return {
-    ...emptyFilters,
+    ...createEmptyFilters(params.defaultMaxPrice),
     categories: params.categories ?? [],
     brands: params.brands ?? [],
     inStock: readAvailability(params.availability),
     priceRange: [
       Number.isFinite(minPrice) && minPrice >= 0 ? minPrice : 0,
-      Number.isFinite(maxPrice) && maxPrice > 0 ? maxPrice : 30000000,
+      Number.isFinite(parsedMaxPrice) && parsedMaxPrice > 0 ? parsedMaxPrice : params.defaultMaxPrice,
     ],
   }
 }
@@ -111,6 +122,11 @@ export function ProductsPageClient({
   const searchParams = useSearchParams()
   const categoryOptions = useMemo(() => toOptions(categories), [categories])
   const brandOptions = useMemo(() => toOptions(brands), [brands])
+  const filterMaxPrice = useMemo(() => {
+    const catalogMaxPrice = products.reduce((max, product) => Math.max(max, product.price || 0), 0)
+    const urlMaxPrice = Number(activeMaxPrice)
+    return roundPriceFilterMax(Math.max(catalogMaxPrice, Number.isFinite(urlMaxPrice) ? urlMaxPrice : 0))
+  }, [activeMaxPrice, products])
   const [filters, setFilters] = useState<ProductFilterState>(() =>
     createFiltersFromUrl({
       categories: activeCategorySlugs,
@@ -118,6 +134,7 @@ export function ProductsPageClient({
       availability: activeAvailability,
       minPrice: activeMinPrice,
       maxPrice: activeMaxPrice,
+      defaultMaxPrice: filterMaxPrice,
     })
   )
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
@@ -136,6 +153,7 @@ export function ProductsPageClient({
         availability: activeAvailability,
         minPrice: activeMinPrice,
         maxPrice: activeMaxPrice,
+        defaultMaxPrice: filterMaxPrice,
       })
     )
     setSearchQuery(initialSearchQuery)
@@ -147,6 +165,7 @@ export function ProductsPageClient({
     activeAvailability,
     activeMinPrice,
     activeMaxPrice,
+    filterMaxPrice,
     initialSearchQuery,
     activeSort,
   ])
@@ -175,7 +194,7 @@ export function ProductsPageClient({
     if (nextFilters.priceRange[0] > 0) params.set("minPrice", String(nextFilters.priceRange[0]))
     else params.delete("minPrice")
 
-    if (nextFilters.priceRange[1] < 30000000) params.set("maxPrice", String(nextFilters.priceRange[1]))
+    if (nextFilters.priceRange[1] < filterMaxPrice) params.set("maxPrice", String(nextFilters.priceRange[1]))
     else params.delete("maxPrice")
 
     if (nextSort && nextSort !== "bestselling") params.set("sort", nextSort)
@@ -291,7 +310,7 @@ export function ProductsPageClient({
         setFilters(nextFilters)
         break
       case "priceRange":
-        nextFilters = { ...filters, priceRange: [0, 30000000] }
+        nextFilters = { ...filters, priceRange: [0, filterMaxPrice] }
         setFilters(nextFilters)
         break
     }
@@ -301,7 +320,7 @@ export function ProductsPageClient({
   }
 
   const handleClearFilters = () => {
-    setFilters(emptyFilters)
+    setFilters(createEmptyFilters(filterMaxPrice))
     setSearchQuery("")
     setSortBy("bestselling")
     setCurrentPage(1)
@@ -380,6 +399,7 @@ export function ProductsPageClient({
               filters={filters}
               categories={categoryOptions}
               brands={brandOptions}
+              maxPrice={filterMaxPrice}
               onFilterChange={handleFilterChange}
               onClearFilters={handleClearFilters}
             />
@@ -395,6 +415,7 @@ export function ProductsPageClient({
                 filters={filters}
                 categories={categoryOptions}
                 brands={brandOptions}
+                maxPrice={filterMaxPrice}
                 onFilterChange={(nextFilters) => {
                   handleFilterChange(nextFilters)
                   setMobileFiltersOpen(false)
@@ -426,6 +447,7 @@ export function ProductsPageClient({
               categories={categoryOptions}
               brands={brandOptions}
               searchQuery={hasUrlSearch ? initialSearchQuery : ""}
+              maxPrice={filterMaxPrice}
               onRemoveFilter={handleRemoveFilter}
               onClearAll={handleClearFilters}
             />
@@ -478,7 +500,7 @@ export function ProductsPageClient({
                   محصولی با فیلترهای انتخاب‌شده پیدا نشد
                 </h3>
                 <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                  فیلترها را تغییر دهید یا با پشتیبانی ساکو الکتریک تماس بگیرید.
+                  فیلترها را تغییر دهید یا با پشتیبانی الکتروساکو تماس بگیرید.
                 </p>
                 <Button onClick={handleClearFilters} className="rounded-xl bg-primary hover:bg-primary/90">
                   پاک کردن فیلترها
@@ -496,27 +518,13 @@ export function ProductsPageClient({
   )
 }
 
-export function ProductsErrorState({ message }: { message: string }) {
+export function ProductsErrorState() {
   return (
     <div className="min-h-screen bg-background">
       <TopBar />
       <Header />
       <main className="container mx-auto px-4 py-16">
-        <div className="mx-auto max-w-2xl rounded-2xl border border-destructive/20 bg-card p-8 text-center shadow-sm">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-            <RefreshCw className="h-7 w-7" />
-          </div>
-          <h1 className="mb-3 text-2xl font-bold text-foreground">خطا در دریافت محصولات</h1>
-          <p className="mb-6 text-sm leading-7 text-muted-foreground">
-            اتصال به پایگاه داده برقرار نشد یا اطلاعات محصولات قابل دریافت نیست.
-          </p>
-          <p dir="ltr" className="mb-6 rounded-xl bg-muted p-3 text-xs text-muted-foreground">
-            {message}
-          </p>
-          <Button asChild className="rounded-xl bg-primary hover:bg-primary/90">
-            <a href="/products">تلاش مجدد</a>
-          </Button>
-        </div>
+        <PublicDataErrorState variant="products" fullPage />
       </main>
       <Footer />
     </div>

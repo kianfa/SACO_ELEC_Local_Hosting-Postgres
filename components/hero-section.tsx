@@ -1,10 +1,16 @@
 import Link from "next/link"
-import { ArrowLeft, BadgeCheck, ChevronLeft, ShieldCheck, Sparkles, Zap } from "lucide-react"
+import { ArrowLeft, BadgeCheck, BrainCircuit, CheckCircle2, ShieldCheck, Sparkles, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { HeroImageSlider } from "@/components/hero-image-slider"
+import { HeroWarpBackground } from "@/components/ui/hero-warp-background"
 import type { HeroSliderImage, HomepageSection } from "@/types/site-content"
 
 const defaultTrustPoints = ["کیفیت برتر", "برندهای معتبر", "قیمت رقابتی", "پشتیبانی فنی تخصصی"]
+const heroValuePoints = [
+  { label: "تامین مستقیم تجهیزات صنعتی", icon: CheckCircle2 },
+  { label: "قیمت رقابتی", icon: Zap },
+  { label: "پشتیبانی تخصصی", icon: BrainCircuit },
+]
 
 function getTrustPoints(section?: HomepageSection | null): string[] {
   const points = section?.metadata?.trustPoints
@@ -40,13 +46,29 @@ function HeroTrustBadges({ items }: { items: string[] }) {
         return (
           <span
             key={`${item}-${index}`}
-            className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/[0.08] px-3.5 py-2 text-xs font-medium text-white/85 shadow-sm backdrop-blur-md transition hover:border-accent/40 hover:bg-white/[0.12] md:text-sm"
+            className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-[#061a3a]/55 px-3.5 py-2 text-xs font-semibold text-blue-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_12px_26px_rgba(2,8,23,0.26)] backdrop-blur-md transition hover:border-cyan-100/28 hover:bg-[#0b2a5a]/62 md:text-sm"
           >
-            <Icon className="h-4 w-4 text-accent" />
+            <Icon className="h-4 w-4 text-accent drop-shadow-[0_0_12px_rgba(245,130,32,0.45)]" />
             {item}
           </span>
         )
       })}
+    </div>
+  )
+}
+
+function HeroValueBar() {
+  return (
+    <div className="grid gap-2.5 sm:grid-cols-3">
+      {heroValuePoints.map(({ label, icon: Icon }) => (
+        <div
+          key={label}
+          className="flex items-center gap-2 rounded-2xl border border-cyan-100/14 bg-[#020817]/42 px-3.5 py-2.5 text-xs font-semibold text-blue-50/84 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_14px_32px_rgba(2,8,23,0.22)] backdrop-blur-xl md:text-sm"
+        >
+          <Icon className="h-4 w-4 shrink-0 text-cyan-100/90 drop-shadow-[0_0_14px_rgba(103,232,249,0.35)]" />
+          <span>{label}</span>
+        </div>
+      ))}
     </div>
   )
 }
@@ -68,7 +90,7 @@ function HeroCTAButtons({
         <Button
           asChild
           size="lg"
-          className="h-12 rounded-2xl bg-accent px-6 text-base font-bold text-accent-foreground shadow-[0_18px_45px_rgba(245,130,32,0.28)] transition hover:-translate-y-0.5 hover:bg-accent/90 hover:shadow-[0_22px_55px_rgba(245,130,32,0.35)]"
+          className="h-12 rounded-2xl bg-accent px-6 text-base font-bold text-accent-foreground shadow-[0_18px_42px_rgba(245,130,32,0.36),inset_0_1px_0_rgba(255,255,255,0.26)] transition duration-300 hover:-translate-y-0.5 hover:bg-accent/90 hover:shadow-[0_24px_58px_rgba(245,130,32,0.46),inset_0_1px_0_rgba(255,255,255,0.34)]"
         >
           <Link href={primaryUrl} aria-label={primaryText}>
             {primaryText}
@@ -79,15 +101,16 @@ function HeroCTAButtons({
           asChild
           size="lg"
           variant="outline"
-          className="h-12 rounded-2xl border-white/25 bg-white/[0.06] px-6 text-base font-semibold text-white shadow-sm backdrop-blur-md transition hover:-translate-y-0.5 hover:border-white/45 hover:bg-white/12 hover:text-white"
+          className="h-12 rounded-2xl border-cyan-100/28 bg-[#061a3a]/35 px-6 text-base font-semibold text-blue-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.09),0_10px_30px_rgba(2,8,23,0.22)] backdrop-blur-md transition duration-300 hover:-translate-y-0.5 hover:border-cyan-100/46 hover:bg-[#0b2a5a]/54 hover:text-white"
         >
           <Link href={secondaryUrl} aria-label={secondaryText}>{secondaryText}</Link>
         </Button>
       </div>
-      <p className="flex items-center gap-2 text-sm text-white/65">
+      <p className="flex items-center gap-2 text-sm text-blue-50/72">
         <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_18px_rgba(245,130,32,0.85)]" />
         مناسب خرید پروژه‌ای و تأمین تجهیزات صنعتی
       </p>
+      <HeroValueBar />
     </div>
   )
 }
@@ -96,7 +119,7 @@ export function HeroSection({ section }: { section?: HomepageSection | null }) {
   const trustPoints = getTrustPoints(section)
   const title = section?.title || "راهکار حرفه‌ای برق صنعتی"
   const subtitle = section?.subtitle || "تجهیزات مطمئن برای صنعت و اتوماسیون"
-  const description = section?.description || "انتخاب، استعلام و تأمین تجهیزات برق صنعتی از برندهای معتبر با پشتیبانی تخصصی ساکو الکتریک."
+  const description = section?.description || "انتخاب، استعلام و تأمین تجهیزات برق صنعتی از برندهای معتبر با پشتیبانی تخصصی الکتروساکو."
   const primaryText = section?.primaryButtonText || "مشاهده محصولات"
   const primaryUrl = section?.primaryButtonUrl || "/products"
   const secondaryText = section?.secondaryButtonText || "استعلام قیمت"
@@ -108,28 +131,27 @@ export function HeroSection({ section }: { section?: HomepageSection | null }) {
   return (
     <section className="relative overflow-hidden py-5 md:py-7 lg:py-9" dir="rtl">
       <div className="container mx-auto px-4">
-        <div className="relative isolate overflow-hidden rounded-[2rem] border border-blue-300/25 bg-[#061328] text-white shadow-[0_34px_100px_rgba(4,13,31,0.34)] ring-1 ring-white/5 lg:rounded-[2.5rem]">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_22%,rgba(245,130,32,0.20),transparent_29%),radial-gradient(circle_at_42%_35%,rgba(59,130,246,0.24),transparent_34%),linear-gradient(135deg,#041026_0%,#08224a_48%,#0d2b58_100%)]" />
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(4,16,38,0.08)_0%,rgba(5,18,42,0.54)_48%,rgba(4,13,31,0.94)_100%)]" />
-          <div className="absolute inset-0 opacity-[0.14] [background-image:linear-gradient(rgba(255,255,255,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.12)_1px,transparent_1px)] [background-size:42px_42px]" />
-          <div className="absolute inset-0 opacity-[0.12] [background-image:radial-gradient(circle_at_center,rgba(255,255,255,0.45)_1px,transparent_1.5px)] [background-size:22px_22px]" />
-          <div className="absolute inset-y-0 right-0 w-2/3 bg-[radial-gradient(circle_at_72%_50%,rgba(15,67,132,0.55),transparent_48%)]" />
-          <div className="absolute -right-24 top-12 h-80 w-80 rounded-full bg-accent/18 blur-3xl" />
-          <div className="absolute -bottom-28 left-5 h-96 w-96 rounded-full bg-blue-400/18 blur-3xl" />
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-l from-transparent via-white/45 to-transparent" />
+        <div className="relative isolate overflow-hidden rounded-[2rem] border border-cyan-100/14 bg-[#081225] text-white shadow-[0_38px_110px_rgba(2,8,23,0.45),0_12px_34px_rgba(11,42,90,0.18)] ring-1 ring-white/8 lg:rounded-[2.5rem]">
+          <HeroWarpBackground />
 
-          <div className="relative grid min-h-[520px] items-center gap-8 px-5 py-7 sm:px-7 md:py-9 lg:min-h-[540px] lg:grid-cols-[0.45fr_0.55fr] lg:gap-8 lg:px-10 xl:px-12">
-            <div className="order-1 flex flex-col justify-center lg:order-1">
-              <div className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-accent/35 bg-accent/10 px-3.5 py-2 text-xs font-semibold text-accent shadow-[0_10px_30px_rgba(245,130,32,0.08)] backdrop-blur-md md:text-sm">
-                <span className="h-2 w-2 rounded-full bg-accent shadow-[0_0_16px_rgba(245,130,32,0.8)]" />
-                ساکو الکتریک، تأمین‌کننده تجهیزات برق صنعتی
+          <div className="pointer-events-none absolute inset-x-8 top-0 z-[1] h-px bg-gradient-to-l from-transparent via-cyan-100/56 to-transparent" />
+          <div className="pointer-events-none absolute inset-y-12 right-0 z-[1] w-px bg-gradient-to-b from-transparent via-cyan-100/20 to-transparent" />
+          <div className="pointer-events-none absolute inset-y-12 left-0 z-[1] w-px bg-gradient-to-b from-transparent via-blue-200/16 to-transparent" />
+
+          <div className="relative z-10 grid min-h-[560px] items-center gap-8 px-5 py-8 sm:px-7 md:py-10 lg:min-h-[590px] lg:grid-cols-[minmax(0,0.51fr)_minmax(0,0.49fr)] lg:gap-12 lg:px-10 xl:gap-14 xl:px-12">
+            <div className="relative order-1 flex flex-col justify-center lg:order-1 lg:pr-2 xl:pr-4">
+              <div className="pointer-events-none absolute -inset-x-5 -inset-y-6 -z-10 rounded-[2rem] bg-[radial-gradient(circle_at_78%_26%,rgba(14,165,233,0.13),transparent_34%),linear-gradient(90deg,rgba(2,8,23,0.08),rgba(2,8,23,0.48)_42%,rgba(2,8,23,0.66))] opacity-95 blur-[1px] lg:-inset-x-8 lg:-inset-y-10" />
+
+              <div className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-accent/35 bg-[#061a3a]/58 px-3.5 py-2 text-xs font-semibold text-orange-100 shadow-[0_10px_30px_rgba(2,8,23,0.22),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-md md:text-sm">
+                <span className="h-2 w-2 rounded-full bg-accent shadow-[0_0_16px_rgba(245,130,32,0.75)]" />
+                الکتروساکو، تأمین‌کننده تجهیزات برق صنعتی
               </div>
 
-              <h1 className="max-w-2xl text-balance text-3xl font-black leading-[1.35] tracking-tight text-white md:text-4xl lg:text-5xl xl:text-[3.35rem]">
+              <h1 className="max-w-2xl text-balance text-3xl font-black leading-[1.34] tracking-[-0.025em] text-white drop-shadow-[0_12px_28px_rgba(2,8,23,0.48)] md:text-4xl lg:text-5xl xl:text-[3.35rem]">
                 {title}
               </h1>
-              <p className="mt-4 max-w-xl text-lg font-semibold leading-8 text-white/90 md:text-xl lg:text-2xl">{subtitle}</p>
-              {description ? <p className="mt-4 max-w-xl text-sm leading-8 text-white/74 md:text-base">{description}</p> : null}
+              <p className="mt-4 max-w-xl text-lg font-semibold leading-8 text-cyan-50 md:text-xl lg:text-2xl">{subtitle}</p>
+              {description ? <p className="mt-4 max-w-xl text-sm leading-8 text-blue-50/78 md:text-base">{description}</p> : null}
 
               <div className="mt-6">
                 <HeroTrustBadges items={trustPoints} />
@@ -140,22 +162,14 @@ export function HeroSection({ section }: { section?: HomepageSection | null }) {
               </div>
             </div>
 
-            <div className="order-2 flex items-center justify-center lg:order-2 lg:-mr-3 xl:-mr-6">
-              <div className="relative w-full max-w-[730px]">
-                <div className="absolute -right-4 top-12 hidden rounded-2xl border border-white/12 bg-white/[0.08] px-3 py-2 text-xs font-semibold text-white/80 shadow-xl backdrop-blur-md lg:block">
-                  <span className="ml-2 inline-block h-2 w-2 rounded-full bg-accent" />
-                  آماده تأمین پروژه‌ای
-                </div>
-                <div className="absolute -left-3 bottom-16 hidden rounded-2xl border border-white/12 bg-white/[0.08] px-3 py-2 text-xs font-semibold text-white/80 shadow-xl backdrop-blur-md lg:block">
-                  مشاوره فنی تخصصی
-                  <ChevronLeft className="mr-1 inline h-3.5 w-3.5 text-accent" />
-                </div>
+            <div className="order-2 flex items-center justify-center lg:order-2 lg:justify-start">
+              <div className="relative w-full max-w-[560px] lg:max-w-[520px] xl:max-w-[548px]">
                 <HeroImageSlider
                   images={heroImages}
                   fallbackImageUrl={fallbackImageUrl}
                   fallbackMobileImageUrl={fallbackMobileImageUrl}
                   fallbackAlt={title}
-                  className="mx-auto"
+                  className="mx-auto lg:mx-0 lg:-translate-x-12 xl:-translate-x-20 2xl:-translate-x-24"
                 />
               </div>
             </div>

@@ -71,7 +71,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       />
     )
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown products data error"
-    return <ProductsErrorState message={message} />
+    console.error("[products-page] failed to load public products", error)
+    return <ProductsErrorState />
   }
 }

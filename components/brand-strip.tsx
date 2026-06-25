@@ -1,9 +1,10 @@
 "use client"
 
-import { ChevronLeft, ChevronRight, AlertCircle } from "lucide-react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Brand } from "@/types/brand"
 import { SafeImageWithFallback } from "@/components/common/safe-image-with-fallback"
+import { PublicDataErrorState } from "@/components/public-data-error-state"
 
 interface BrandStripProps {
   brands: Brand[]
@@ -31,10 +32,7 @@ export function BrandStrip({ brands, error }: BrandStripProps) {
         </Button>
 
         {error ? (
-          <div className="w-full rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-sm text-destructive flex items-center gap-3">
-            <AlertCircle className="h-5 w-5 flex-shrink-0" />
-            <span>خطا در دریافت برندها. لطفاً بعداً دوباره تلاش کنید.</span>
-          </div>
+          <PublicDataErrorState variant="compact" className="w-full p-6 sm:p-8" />
         ) : brands.length === 0 ? (
           <div className="w-full rounded-2xl border border-dashed border-border bg-card p-8 text-center text-muted-foreground">
             هنوز برندی ثبت نشده است.

@@ -48,6 +48,14 @@ async function fetchHomepageCategoriesUncached(): Promise<Category[]> {
   }
 }
 
+async function fetchHomepageCategoriesForPageUncached(): Promise<Category[]> {
+  const categories = await withPublicDataTimeout("homepage categories page lookup", (signal) => fetchHomepageCategories(signal))
+  if (performanceDebugEnabled()) {
+    console.log(`[perf] homepage categories page mapped count=${categories.length}`)
+  }
+  return categories
+}
+
 const getCachedPublicCategories = unstable_cache(
   async () => fetchPublicCategoriesUncached(),
   ["public-categories-v1"],
@@ -84,6 +92,11 @@ export async function getCategoryProductCounts(): Promise<Record<string, number>
 export async function getHomepageCategories(requestedBy = "unspecified-call-site"): Promise<Category[]> {
   traceLog(`fetchHomepageCategories caller=${requestedBy}`)
   return withServerTiming(`getHomepageCategories ${requestedBy}`, () => getRequestScopedHomepageCategories())
+}
+
+export async function getHomepageCategoriesForPage(requestedBy = "unspecified-call-site"): Promise<Category[]> {
+  traceLog(`fetchHomepageCategoriesForPage caller=${requestedBy}`)
+  return withServerTiming(`getHomepageCategoriesForPage ${requestedBy}`, () => fetchHomepageCategoriesForPageUncached())
 }
 
 export async function getFooterCategoryLinks(requestedBy = "unspecified-call-site"): Promise<FooterCategoryLink[]> {

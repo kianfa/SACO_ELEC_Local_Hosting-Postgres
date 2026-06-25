@@ -10,7 +10,7 @@ import { BrandStrip } from "@/components/brand-strip"
 import { TrustFeatures } from "@/components/trust-features"
 import { Footer } from "@/components/footer"
 import { getBrands } from "@/lib/services/brands-service"
-import { getHomepageCategories, getHomepageCategorySectionSettings } from "@/lib/services/categories-service"
+import { getHomepageCategoriesForPage, getHomepageCategorySectionSettings } from "@/lib/services/categories-service"
 import { getFeaturedProducts } from "@/lib/services/products-service"
 import { getPublicSiteSettings } from "@/lib/services/site-settings-service"
 import { getActiveBannersByPlacement, getHomepageSection } from "@/lib/services/site-content-service"
@@ -39,7 +39,7 @@ export default async function HomePage() {
   const [featuredProductsResult, categoriesResult, categorySettingsResult, brandsResult, heroResult, promoResult, promoBannersResult, siteSettingsResult] =
     await Promise.allSettled([
       getFeaturedProducts(),
-      getHomepageCategories("homepage-page"),
+      getHomepageCategoriesForPage("homepage-page"),
       getHomepageCategorySectionSettings(),
       getBrands(),
       getHomepageSection("hero"),
